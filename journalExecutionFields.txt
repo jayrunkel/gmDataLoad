@@ -16,4 +16,3 @@ amount.decimal()
 currency_code.int32()
 commission.decimal()
 exec_comment.string()
-
