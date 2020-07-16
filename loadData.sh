@@ -3,7 +3,7 @@
 #Copy from mongoimport URL under command line tools in Atlas
 MONGOIMPORT_URL="atlas-12nzn7-shard-0/functionaltest-shard-00-00.zq5bn.mongodb.net:27017,functionaltest-shard-00-01.zq5bn.mongodb.net:27017,functionaltest-shard-00-02.zq5bn.mongodb.net:27017"
 MDB_USER="admin"
-MDB_PASSWORD="GreenMeadows"
+MDB_PASSWORD="*************"
 DATABASE_NAME="loadTest"
 #Copy from mongoshell connection string under the Connect button in Atlas
 MONGOSHELL_URL="mongodb+srv://functionaltest.zq5bn.mongodb.net/$DATABASE_NAME"
