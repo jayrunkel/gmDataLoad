@@ -1,0 +1,8 @@
+account_number.int64()
+account_sub_type.string()
+basket_id.int32()
+cusip.string()
+firm.string()
+td_balance.decimal()
+sd_balance.decimal()
+cost_basis.decimal()

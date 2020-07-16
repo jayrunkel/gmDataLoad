@@ -1,0 +1,6 @@
+account_number.int64()
+account_sub_type.string()
+basket_id.int32()
+firm.string()
+td_balance.decimal()
+sd_balance.decimal()
