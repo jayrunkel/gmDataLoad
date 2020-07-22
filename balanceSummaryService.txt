@@ -1,0 +1,143 @@
+	
+	public void updateBalanceSummary(long accountNumber, String accountSubType, int basketId, String cusip, String firm,
+			BigDecimal tdBalance, BigDecimal sdBalance, BigDecimal costBasis, boolean update) {
+		MongoCollection<Document> collection = this.mongoTemplate.getCollection("balanceSummary");
+
+		Bson instIdFilter = Filters.eq("_id", accountNumber);
+
+		UpdateOptions options = new UpdateOptions();
+		
+		options.upsert(true);
+		
+		collection.updateOne(instIdFilter, Updates.setOnInsert("subTypes", Arrays.asList()), options);
+		if (update) {
+			collection.updateOne(instIdFilter,aggregateNewSubType(accountSubType, basketId, cusip, firm, tdBalance, sdBalance, costBasis), options);
+		}
+	}
+
+	private List<Document> aggregateNewSubType(String accountSubType, int basketId, String cusip,
+			String firm, BigDecimal tdBalance, BigDecimal sdBalance, BigDecimal costBasis) {
+		return
+		Arrays.asList(new Document("$set", 
+			    new Document("subTypes", 
+			    new Document("$let", 
+			    new Document("vars", 
+			    new Document("subTypeObjs",
+					 new Document("$ifNull",
+						      Arrays.asList(
+								    new Document("$filter", 
+										 new Document("input", "$subTypes").append("cond", 
+															   new Document("$eq", Arrays.asList("$$this.account_sub_type", accountSubType))))))))
+			                    .append("in", 
+			    new Document("$let", 
+			    new Document("vars", 
+			    new Document("newSubTypeObj", 
+			    new Document("$cond", 
+			    new Document("if", 
+			    		new Document("$eq", Arrays.asList(
+								new Document("$size",
+										new Document("$ifNull",
+												Arrays.asList("$$subTypeObjs", Arrays.asList()))),
+								1L)))
+			    // new Document("$eq", Arrays.asList(new Document("$size", "$$subTypeObjs"), 1L)))
+			                                        .append("then", 
+			                                        		updatePositions(accountSubType, basketId, cusip, firm, tdBalance, sdBalance, costBasis))
+			                                        .append("else", 
+			                                        		buildNewSubType(accountSubType, basketId, cusip, firm, tdBalance, sdBalance, costBasis)))))
+			                            .append("in", 
+			    new Document("$cond", 
+			    new Document("if", 
+			    		new Document("$eq", Arrays.asList(
+								new Document("$size",
+										new Document("$ifNull",
+												Arrays.asList("$$subTypeObjs", Arrays.asList()))),
+								1L)))
+			    // new Document("$eq", Arrays.asList(new Document("$size", "$$subTypeObjs"), 1L)))
+			                                    .append("then", 
+			    new Document("$map", 
+			    new Document("input", "$subTypes")
+			                                            .append("as", "subtype")
+			                                            .append("in", 
+			    new Document("$cond", 
+			    new Document("if", 
+			    new Document("$eq", Arrays.asList("$$subtype.account_sub_type", accountSubType)))
+			                                                    .append("then", "$$newSubTypeObj")
+			                                                    .append("else", "$$subtype")))))
+			                                    .append("else", 
+			    new Document("$concatArrays",
+					 Arrays.asList(new Document("$ifNull",
+								    Arrays.asList("$subTypes", Arrays.asList())),
+						       Arrays.asList("$$newSubTypeObj"))))))))))));
+	}
+	
+	public Document updatePositions(String accountSubType, int basketId, String cusip,
+			String firm, BigDecimal tdBalance, BigDecimal sdBalance, BigDecimal costBasis) {
+		Document subTypeObject =   new Document("subTypeObj", 
+	    	    new Document("$arrayElemAt", Arrays.asList("$$subTypeObjs", 0L)));
+		
+		Document positionObjs = new Document("positionObjs",
+				new Document("$filter",
+						new Document("input", "$$subTypeObj.positions").append("cond",
+								new Document("$eq", Arrays.asList("$$this.cusip", cusip)))))
+				.append("newPosition", buildNewPosition(cusip, tdBalance, sdBalance, costBasis));
+		
+		Document mergeObjects = new Document("$mergeObjects", Arrays.asList("$$subTypeObj", 
+                new Document("basketId", basketId)
+                .append("firm", firm)
+                .append("positions", 
+            new Document("$cond", 
+            new Document("if", 
+            new Document("$eq", Arrays.asList(
+					new Document("$size",
+							new Document("$ifNull",
+									Arrays.asList("$$positionObjs", Arrays.asList()))),
+					1L)))
+                        .append("then", 
+            new Document("$map", 
+            new Document("input", "$$subTypeObj.positions")
+                                .append("as", "pos")
+                                .append("in", 
+            new Document("$cond", 
+            new Document("if", 
+            new Document("$eq", Arrays.asList("$$pos.cusip", cusip)))
+                                        .append("then", "$$newPosition")
+                                        .append("else", "$$pos")))))
+                        .append("else", 
+            new Document("$concatArrays", Arrays.asList("$$subTypeObj.positions", Arrays.asList("$$newPosition"))))))));
+		
+		Document d = new Document("$let", 
+				new Document("vars", subTypeObject)
+				.append("in",
+				new Document("$let", 
+						new Document("vars", positionObjs)
+						.append("in", 
+								new Document("$mergeObjects", mergeObjects)))));
+		
+		return d;
+	}
+	
+	private Document buildNewSubType(String accountSubType, int basketId, String cusip, String firm,
+			BigDecimal tdBalance, BigDecimal sdBalance, BigDecimal costBasis) {
+
+		Document subType = new Document();
+		subType.put("account_sub_type", accountSubType);
+		subType.put("basketId", basketId);
+		subType.put("firm", firm);
+		subType.put("td_balance", tdBalance);
+		subType.put("sd_balance", sdBalance);
+		
+		subType.put("positions", ImmutableList.of(buildNewPosition(cusip, tdBalance, sdBalance, costBasis)));
+
+		return subType;
+	}
+
+	private Document buildNewPosition(String cusip, BigDecimal tdBalance, BigDecimal sdBalance, BigDecimal costBasis) {
+
+		Document position = new Document();
+		position.put("cusip", cusip);
+		position.put("td_balance", tdBalance);
+		position.put("sd_balance", sdBalance);
+		position.put("cost_basis", costBasis);
+
+		return position;
+	}
