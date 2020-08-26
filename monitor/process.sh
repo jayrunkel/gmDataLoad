@@ -1,6 +1,7 @@
 #!/bin/bash
 
-HOST=functionaltest-shard-00-02.zq5bn.mongodb.net
+#HOST=functionaltest-shard-00-02.zq5bn.mongodb.net
+HOST=$1
 PORT=27017
 USERNAME=admin
 PASSWORD=GreenMeadows
@@ -20,7 +21,7 @@ while { read n; } do
     if [ $diff -gt 0 ]
     then 
 	ts=`date +"%T"`
-	echo "$ts: Transaction: $diff  : $n - $previous"
+	echo "$ts, Transaction:, $diff,  : $n - $previous"
 	previous=$n
     fi
 done < <(runMongoStat)
