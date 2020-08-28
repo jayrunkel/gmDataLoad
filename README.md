@@ -124,6 +124,6 @@ This is implemented through the following programmatic steps:
   
 **For whatever reason, all the collections except transactionHistory use the field name "account_number". transactionHistory uses accountNumber.**
 
-# WARNINGS
+# SHARDING WARNINGS
 	1. **If a collection is dropped, this entire process will need to be repeated for the collection.**
 	2. **See https://jira.mongodb.org/browse/SERVER-17397 for potential issues when trying to drop sharded databases**
