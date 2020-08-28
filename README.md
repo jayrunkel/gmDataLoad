@@ -42,7 +42,7 @@ process.sh uses mongostat to capture the transaction commits on each node of a M
 
 The implementation of process.sh is as follows:
   * mongostat with the argument -O='transactions.totalCommitted' is run to capture the total transactions committed on the server
-  * jq is used to process the JSON produced by mongostat and extract the # of transaction commits
+  * jq is used to process the JSON produced by mongostat and extract the # of transaction commits. 
   * the output of jq is pumped through a simple loop that calculates the commits each second by comparing the current total commits to the total commits from the mongostat output from the previous second. 
 process.sh produces a CSV file with 1 row per second, where each row contains the current time and the number of commits that were executed during that second.
 
@@ -57,6 +57,7 @@ After a test is complete, simply ctrl-c to stop execution. The output of process
 
 ##### Notes
   1. process.sh will only print out information, if transactions are being executed on a server. Nothing will be displayed if there isn't any transaction processing occuring.
+  2. This script requires jq (https://github.com/stedolan/jqhttps://github.com/stedolan/jq)
 
 
 ### process2.sh
