@@ -21,7 +21,79 @@ The .txt files in the top level directory define the structure of the CSV files 
 
 ## Transaction Monitoring
 
+_This is a work in progress_
 
+Since Atlas does not use track transaction commits per second, the scripts in this area are designed to pull this information from MongoDB in real time. Essentially, mongostat is used to capture this information and then the scripts capture and process this information.
+
+There are two main scripts:
+ * process.sh
+ * process2.sh
+ 
+These scripts take a different approach to processing the data.
+ 
+### process.sh
+
+**WARNING: I don't think this script will work on a sharded cluster. Use process2.sh**
+
+process.sh uses mongostat to capture the transaction commits on each node of a MongoDB cluster. Therefore, this script needs to be run on the primary of each replica set or on every node in a cluster if performing a failover test. 
+
+The implementation of process.sh is as follows:
+  * mongostat with the argument -O='transactions.totalCommitted' is run to capture the total transactions committed on the server
+  * jq is used to process the JSON produced by mongostat and extract the # of transaction commits
+  * the output of jq is pumped through a simple loop that calculates the commits each second by comparing the current total commits to the total commits from the mongostat output from the previous second. 
+  
+#### process.sh arguments
+process.h takes 1 argument. The host name of the server being monitored. I typically pipe the output of process.sh to tee so I can view it while logging it to a file as follows:
+
+```bash
+./process.sh functionaltest-shard-00-00.zq5bn.mongodb.net | tee test28Aug2020-00-1a.csv
+```
+
+After a test is complete, simply ctrl-c to stop execution. The output of process.sh can be loaded into Google Sheets as a CSV and used to create a chart. See https://docs.google.com/spreadsheets/d/1aZ9SQUGkvxqpev5H7shh_ndW1CToj6kL8yJ4Pa490Eo/edit?usp=sharing for an example.
+
+##### Notes
+  1. process.sh will only print out information, if transactions are being executed on a server. Nothing will be displayed if there isn't any transaction information.
+
+
+### process2.sh
+
+_This is a work in progress_
+
+process2.sh uses MongoDB charts to visualize the test results. Instead of outputing the results as CSV, process2.sh pushes the output of mongostat directly into a MongoDB cluster. In addition, this script has the following improvements over process.sh:
+  * it collects metrics from all nodes in a cluster
+  * it captures all the sharding transaction metrics.
+
+#### process2.sh arguments
+
+process2.sh requires 3 arguments:
+  1. TESTNAME - the name of the test. This name will be used as the name of the output file (<argument1.json>)
+  2. SECONDARY - the hostname of  mongos in a sharded cluster or a secondary in a replica set
+  3. PORT - 27016 for mongos and 27017 for replica set members
+
+
+```bash
+./process2.sh sTest2 shardingtest-shard-00-00.zq5bn.mongodb.net 27016
+```
+
+#### Steps for using process2.sh
+  1. Update REPORTING_DB_URI in process2.sh, if necessary. This is the URI connection string for the MongoDB instance use to collect the monitoring data.
+  1. Start process2.sh before the beginning of the test.
+  2. After the test is complete. Verify that the data has been loaded into the reporting MongoDB instance. If the data has not been loaded load it by executing the following command:
+  ```bash
+  mongoimport --uri "$REPORTING_DB_URI" --db gmTests --collection $TESTNAME --type json
+  ```
+  3. Create two views on the TESTNAME collection created in step 2. 
+     1. TESTNAMEReport - This view cleans up the JSON produced by mongostat, correctly types all the information, etc. The aggregation pipeline code for this view can be found in processPipeline.js
+	 2. TESTNAMETxnReport - This view is defined on the TESTNAMEReport view. It calculates the transaction deltas. The aggregation pipeline code for this view can be found in transactionDeltas.js
+  4. Create the desired charts on the TESTNAMETxnReport collection. An example chart is viewable here: https://charts.mongodb.com/charts-runkel-bbjup/public/dashboards/e517606e-b1fc-4476-bd88-ceb34a46e088
+  
+#### Limitations
+  1. Lots of manual steps including:
+     * the pipe of mongostat | mongoimport doesn't seem to work (I don't know why). After the test I need to manually run mongoimport to load the data.
+	 * two views must be created on the data. Currently, the creation of the views is manual.
+	 * the charts to visualize the data must be created manually. I haven't spent a lot of time figuring out what these should look like.
+  2. Due to the way mongostat works, metrics are only collected approximately ever 10 seconds on each server. An enhancement would be to have this script spawn a separate mongostat instance to collect data from each node directly.
+  3. the TESTNAMETxnReport may need to be updated to calculate transactions per second.
 
 ## Sharding
 
@@ -48,5 +120,5 @@ This is implemented through the following programmatic steps:
 **For whatever reason, all the collections except transactionHistory use the field name "account_number". transactionHistory uses accountNumber.**
 
 # WARNINGS
-	1. ** If a collection is dropped, this entire process will need to be repeated for the collection.
-	2. See https://jira.mongodb.org/browse/SERVER-17397 for potential issues when trying to drop sharded databases
+	1. **If a collection is dropped, this entire process will need to be repeated for the collection.**
+	2. **See https://jira.mongodb.org/browse/SERVER-17397 for potential issues when trying to drop sharded databases**
