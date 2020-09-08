@@ -1,0 +1,35 @@
+{
+    "testname" : "funcTest92",
+    "mongostat_batch_size" : 5,
+    "mongostat_options" : "transactions.totalCommitted",
+    "batches" : 1,
+    "logger" : {
+        "uri" : "mongodb+srv://m10basicagain.vmwqj.mongodb.net",
+        "username" : "main_admin",
+        "password" : "bugsyBoo",
+        "database" :  "gm_test"
+    },
+    "shardsource" : {
+        "host" : "shardingtest-shard-00-00.zq5bn.mongodb.net",
+        "shards" : [
+            "shardingtest-shard-00-00.zq5bn.mongodb.net",
+            "shardingtest-shard-01-00.zq5bn.mongodb.net",
+            "shardingtest-shard-02-00.zq5bn.mongodb.net"
+        ],
+        "uri" : "mongodb+srv://shardingtest.zq5bn.mongodb.net",
+        "port" : "27016",
+        "username" : "admin",
+        "password" : "GreenMeadows",
+        "database" :  "journal"
+    },
+    "source" : {
+        "host" : "functionaltest-shard-00-01.zq5bn.mongodb.net",
+        "uri" : "mongodb+srv://functionaltest.zq5bn.mongodb.net",
+        "port" : "27017",
+        "username" : "admin",
+        "password" : "GreenMeadows",
+        "database" :  "journal"
+    }
+}
+
+    
