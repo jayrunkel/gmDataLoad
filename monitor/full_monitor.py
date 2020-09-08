@@ -93,6 +93,7 @@ def run_mongostat():
 
 def db_stats(dbclient = "none"):
     global first_time
+    global last_doc
     if dbclient == "none":
         user = settings["source"]["username"]
         pwd = settings["source"]["password"]
@@ -174,3 +175,21 @@ if __name__ == "__main__":
         #print(docs)
             
     client.close()
+
+'''
+Sample Aggregation:
+[{$match: {
+  "transactions.totalCommittedDelta" : {$exists: true}
+}}, {$project: {
+  localTime: {$dateToString: { format: "%d-%m-%Y|%H:%M:%S", date: "$localTime"}}, 
+  'netTransactions' : "$transactions.totalCommittedDelta",
+  transactionsFailed: "$transactions.totalAbortedDelta",
+  transactionsTotal: "$transactions.totalCommitted",
+  inserts: "$opcounters.insertDelta",
+  updates: "$opcounters.updateDelta",
+  deletes: "$opcounter.deleteDelta",
+  queries: "$opcounters.queryDelta",
+  getmore: "$opcounters.getmoreDelta"
+
+  }}]
+'''
