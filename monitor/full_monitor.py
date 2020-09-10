@@ -74,10 +74,10 @@ def clean_key(key):
     return key.replace(":","-").replace(".","_").replace("@","").replace(",","")
 
 def run_mongostat():
-    host = settings["source"]["host"]
-    port = settings["source"]["port"]
-    username = settings["source"]["username"]
-    password = settings["source"]["password"]
+    host = settings["shardsource"]["host"]
+    port = settings["shardsource"]["port"]
+    username = settings["shardsource"]["username"]
+    password = settings["shardsource"]["password"]
     numrows = settings["mongostat_batch_size"]
     options = settings["mongostat_options"]
     cmd = ["mongostat", "--host", f'"{host}"', "--port", f'"{port}"', "--username", f'"{username}"', "--password", f'"{password}"', "--authenticationDatabase", "admin", "--ssl", "--discover", f'--rowcount={numrows}', "--json", f'-O="{options}"']
@@ -92,11 +92,12 @@ def run_mongostat():
     return stats
 
 def db_stats(dbclient = "none"):
+    global last_doc
     global first_time
     if dbclient == "none":
-        user = settings["source"]["username"]
-        pwd = settings["source"]["password"]
-        s_uri = settings["source"]["uri"]
+        user = settings["shardsource"]["username"]
+        pwd = settings["shardsource"]["password"]
+        s_uri = settings["shardsource"]["uri"]
         s_uri = s_uri.replace("//", f'//{user}:{pwd}@')
         print(f'Source: {s_uri}')
         dbclient = MongoClient(s_uri)
@@ -120,6 +121,7 @@ def db_stats(dbclient = "none"):
             res["transactions"]["totalCommittedDelta"] = res["transactions"]["totalCommitted"] - last_doc["transactions"]["totalCommitted"]
             res["transactions"]["totalStartedDelta"] = res["transactions"]["totalStarted"] - last_doc["transactions"]["totalStarted"]
             res["transactions"]["totalAbortedDelta"] = res["transactions"]["totalAborted"] - last_doc["transactions"]["totalAborted"]
+            res["transactions"]["commitTypes"]["singleShard"]["successfulDelta"] =  res["transactions"]["commitTypes"]["singleShard"]["successful"] -  last_doc["transactions"]["commitTypes"]["singleShard"]["successful"]
         else:
             res["opcounters"]["insertDelta"] = 0
             res["opcounters"]["updateDelta"] = 0
@@ -130,6 +132,7 @@ def db_stats(dbclient = "none"):
             res["transactions"]["totalCommittedDelta"] = 0
             res["transactions"]["totalStartedDelta"] = 0
             res["transactions"]["totalAbortedDelta"] = 0
+            res["transactions"]["commitTypes"]["singleShard"]["successfulDelta"] = 0
             first_time = False    
         batch.append(res)
         last_doc = res
@@ -160,7 +163,7 @@ if __name__ == "__main__":
     database = settings["logger"]["database"]
     batches = settings["batches"]
     testname = ARGS["testname"]
-    #shards = settings["source"]["shards"]
+    #shards = settings["shardsource"]["shards"]
     uri = uri.replace("//", f'//{username}:{password}@')
     client = MongoClient(uri) #&w=majority
     mdb = client[database]
