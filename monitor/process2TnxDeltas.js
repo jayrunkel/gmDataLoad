@@ -1,10 +1,13 @@
-var col = db.getCollection("shTest08Sep2020-3");
+//var col = db.getCollection("shTest08Sep2020-3");
+//var colName = "shTest10Sep2020-2"
+var colName = "fulltest-9-10-20";
+var col = db.getCollection(colName);
 
 var pipeline = [{$lookup: {
-  from: 'shTest08Sep2020-3',
+  from: colName,
   'let': {
     host: '$host',
-    time: '$uptimeMillis'
+    time: '$localTime'
   },
   pipeline: [
     {
@@ -19,7 +22,7 @@ var pipeline = [{$lookup: {
             },
             {
               $lt: [
-                '$uptimeMillis',
+                '$localTime',
                 '$$time'
               ]
             }
@@ -29,7 +32,7 @@ var pipeline = [{$lookup: {
     },
     {
       $sort: {
-        uptimeMillis: -1
+        localTime: -1
       }
     },
     {
@@ -37,7 +40,7 @@ var pipeline = [{$lookup: {
     },
     {
       $addFields: {
-        'transactions.previousMillis': '$uptimeMillis'
+        'transactions.previousLocalTime': '$localTime'
       }
     },
     {
@@ -63,8 +66,8 @@ var pipeline = [{$lookup: {
           vars: {
             duration: {
               $subtract: [
-                '$uptimeMillis',
-                '$$tDeltas.previousMillis'
+                '$localTime',
+                '$$tDeltas.previousLocalTime'
               ]
             }
           },
@@ -126,10 +129,10 @@ var pipeline = [{$lookup: {
   }
 }}
 ,{
- $out : "Test3WithDeltasMView"
+ $out : colName + "MView"
  }
  ]
 
 		
 
-col.aggregate(pipeline, {allowDiskUse : true})
+col.aggregate(pipeline, {allowDiskUse : true, maxTimeMS : 0})
