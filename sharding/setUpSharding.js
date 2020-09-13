@@ -1,8 +1,9 @@
 var numZones = 3;
 var numShards = numZones;
 var shardPrefix = "atlas-vc1dhn-shard-";
-var dbName = "bookdbo";
-var colNames = ["bookdbo.summaryCol", "bookdbo.journalCol", "bookdbo.summary", "bookdbo.transactionHistory", "bookdbo.trialBalanceSummary"];  
+//var dbName = "bookdbo";
+var dbName = "zoneTest";
+var colNames = ["zoneTest.summaryCol", "zoneTest.journalCol", "zoneTest.summary", "zoneTest.transactionHistory", "zoneTest.trialBalanceSummary"];  
 var accountLower = 1000000000;
 var accountUpper = 9999999999;
 var numInitialChunks = 3840; // (120 GB per collection / 64 MB chunks) * 2  -- we want the chunks to be half empty
@@ -35,7 +36,7 @@ printjson(zones);
 // set up each shard
 colNames.forEach(collection => {
     zones.forEach(zone => {
-	if (collection == "bookdbo.transactionHistory") {
+	if (collection == "zoneTest.transactionHistory") {
 	    sh.updateZoneKeyRange(
 		collection,
 		{accountNumber : zone.lowerBound},
@@ -57,7 +58,7 @@ colNames.forEach(collection => {
 sh.enableSharding(dbName);		 
 
 colNames.forEach(collection => {
-    if (collection == "bookdbo.transactionHistory") {
+    if (collection == "zoneTest.transactionHistory") {
 	sh.shardCollection(collection, {accountNumber : 1}, false, {numInitialChunks : numInitialChunks});
     }
     else {
@@ -70,7 +71,7 @@ colNames.forEach(collection => {
     print("starting collection: ", collection);
     
     for (x = accountLower + Math.floor(chunkSplitInterval / 2); x < accountUpper; x = x + chunkSplitInterval) {
-	if (collection == "bookdbo.transactionHistory") {
+	if (collection == "zoneTest.transactionHistory") {
 	    db.adminCommand({split : collection, middle : {accountNumber : x}});
 	}
 	else {
