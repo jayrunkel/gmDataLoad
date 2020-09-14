@@ -1,9 +1,15 @@
 {
     "testname" : "funcTest92",
-    "mongostat_batch_size" : 5,
+    "batch_size" : 5,
     "mongostat_options" : "transactions.totalCommitted",
     "batches" : 3,
     "logger" : {
+        "uri" : "mongodb+srv://tradeservice.aamtz.gcp.mongodb.net",
+        "username" : "brady",
+        "password" : "bugsyBoo",
+        "database" :  "gm_test"
+    },
+    "bblogger" : {
         "uri" : "mongodb+srv://m10basicagain.vmwqj.mongodb.net",
         "username" : "main_admin",
         "password" : "bugsyBoo",
