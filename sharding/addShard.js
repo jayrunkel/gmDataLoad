@@ -50,3 +50,20 @@ colNames.forEach(collection => {
 
 // Start the balancer
 //sh.startBalancer();
+
+
+// var colls = ["bookdbo.summaryCol", "bookdbo.journalCol", "bookdbo.summary", "bookdbo.transactionHistory", "bookdbo.trialBalanceSummary"];
+// colls.forEach(collection => {
+//     if (collection == "bookdbo.transactionHistory") {
+// 	sh.removeRangeFromZone(collection,
+// 			   {accountNumber : 9000000000},
+// 			       {accountNumber : 9999999999},
+// 			   "newZone3");
+//        }
+//     else {
+// 	sh.removeRangeFromZone(collection,
+// 			       {account_number : 9000000000},
+// 			       {account_number : 9999999999},
+// 			       "newZone3");
+//     }
+// });
